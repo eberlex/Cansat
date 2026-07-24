@@ -229,7 +229,7 @@ static int BMEReadRaw(void)
 	uint8_t RawData[8];
 
 	// Check the chip ID before reading
-	HAL_I2C_Mem_Read(&hi2c1, BME280_ADDRESS, ID_REG, 1, &chipID, 1, 1000);
+	HAL_I2C_Mem_Read(&BME280_I2C, BME280_ADDRESS, ID_REG, 1, &chipID, 1, 1000);
 
 	if (chipID == 0x60)
 	{
