@@ -147,7 +147,7 @@ int main(void)
     
     sprintf(buffer, "Temp: %.2f°C | Press: %.2f hPa | Hum: %.2f%%\r\n", 
             temperature_bme, pressure_bme/100.0f, humidity_bme);
-    HAL_USART_Transmit(&husart2, (uint8_t *)buffer, strlen(buffer), 100);
+    HAL_UART_Transmit(&huart2, (uint8_t *)buffer, strlen(buffer), 100);
 
   /*---------------------------------Leitura dos valores do ICM-42688-P-----------------------------------------------------*/
     if (ICM42688_ReadData(&imu_data) == 0)
@@ -156,7 +156,7 @@ int main(void)
               imu_data.accel_x_g, imu_data.accel_y_g, imu_data.accel_z_g,
               imu_data.gyro_x_dps, imu_data.gyro_y_dps, imu_data.gyro_z_dps,
               imu_data.temp_c);
-      HAL_USART_Transmit(&husart2, (uint8_t *)buffer, strlen(buffer), 100);
+      HAL_UART_Transmit(&huart2, (uint8_t *)buffer, strlen(buffer), 100);
     }
 
     HAL_Delay(500);
