@@ -173,9 +173,9 @@ void BME280_Measure(float *temperature, float *pressure, float *humidity)
     else
     {
         // if the device is detached
-        *temperature = 0;
-        *pressure    = 0;
-        *humidity    = 0;
+        *temperature = -999;
+        *pressure    = -999;
+        *humidity    = -999;
     }
 }
 
