@@ -22,8 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "BME280_STM32.h"
-#include "ICM42688_STM32.h"
-#include "i2c.h"
+#include "mpu6050.h"
 #include <string.h>
 #include <stdio.h>
 /* USER CODE END Includes */
@@ -54,7 +53,8 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 float temperature_bme, pressure_bme, humidity_bme;
-ICM42688_Data imu_data;
+MPU6050_t mpu_data;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -116,21 +116,19 @@ int main(void)
   /*---------------------------------------BME280---------------------------------------*/
   if (BME280_Config(OSRS_1, OSRS_1, OSRS_1, MODE_NORMAL, T_SB_250, IIR_2) != 0)
   {
-    Error_Handler();
+    HAL_UART_Transmit(&huart2, (uint8_t*)"Erro na init do BME280!\r\n", 25, 100);
   }
 
   
-
-  /*---------------------------------------ICM-42688-P---------------------------------------*/
-  ICM42688_Config imu_config = ICM42688_GetDefaultConfig();
-  imu_config.accel_fs = ICM42688_ACCEL_FS_16G;   /* opcoes: 2G, 4G, 8G, 16G */
-  imu_config.gyro_fs  = ICM42688_GYRO_FS_2000DPS; /* opcoes: 15_625DPS ... 2000DPS */
-  imu_config.odr      = ICM42688_ODR_1KHZ;        /* opcoes: 12_5HZ ... 32KHZ */
-
-  /* configura o ICM-42688-P */
-  if (ICM42688_Init(&imu_config) != 0)
+  /*---------------------------------------MPU-6050---------------------------------------*/
+  // Passamos o handle do barramento I2C onde o MPU está conectado (ex: hi2c1)
+  if (MPU6050_Init(&hi2c1) != HAL_OK)
   {
-    Error_Handler();
+    HAL_UART_Transmit(&huart2, (uint8_t*)"Erro: MPU6050 nao encontrado!\r\n", 31, 100);
+  }
+  else
+  {
+    HAL_UART_Transmit(&huart2, (uint8_t*)"MPU6050 Inicializado!\r\n", 23, 100);
   }
 
   /* USER CODE END 2 */
@@ -149,13 +147,16 @@ int main(void)
             temperature_bme, pressure_bme/100.0f, humidity_bme);
     HAL_UART_Transmit(&huart2, (uint8_t *)buffer, strlen(buffer), 100);
 
-  /*---------------------------------Leitura dos valores do ICM-42688-P-----------------------------------------------------*/
-    if (ICM42688_ReadData(&imu_data) == 0)
+  /*---------------------------------Leitura do MPU-6050---------------------------------*/
+    if (MPU6050_ReadAll(&hi2c1, &mpu_data) == HAL_OK)
     {
-      sprintf(buffer, "Accel[g]: X=%.3f Y=%.3f Z=%.3f | Gyro[dps]: X=%.2f Y=%.2f Z=%.2f | T=%.1fC\r\n",
-              imu_data.accel_x_g, imu_data.accel_y_g, imu_data.accel_z_g,
-              imu_data.gyro_x_dps, imu_data.gyro_y_dps, imu_data.gyro_z_dps,
-              imu_data.temp_c);
+      // Converte os valores RAW para g, °/s e °C
+      MPU6050_Convert(&mpu_data);
+
+      sprintf(buffer, "[MPU6050]  Accel[g]: X=%.3f Y=%.3f Z=%.3f | Gyro[dps]: X=%.2f Y=%.2f Z=%.2f | Temp: %.1f C\r\n\n",
+              mpu_data.Ax, mpu_data.Ay, mpu_data.Az,
+              mpu_data.Gx, mpu_data.Gy, mpu_data.Gz,
+              mpu_data.Temperature);
       HAL_UART_Transmit(&huart2, (uint8_t *)buffer, strlen(buffer), 100);
     }
 
@@ -388,9 +389,8 @@ static void MX_USART2_UART_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
   /* USER CODE BEGIN MX_GPIO_Init_1 */
-  
+
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
@@ -398,15 +398,6 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
-
-  /* Configura pino de CS do ICM-42688-P (controlado por software) */
-  HAL_GPIO_WritePin(ICM42688_CS_GPIO_Port, ICM42688_CS_Pin, GPIO_PIN_SET);
-
-  GPIO_InitStruct.Pin = ICM42688_CS_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(ICM42688_CS_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE END MX_GPIO_Init_2 */
 }
