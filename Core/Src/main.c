@@ -22,7 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "BME280_STM32.h"
-#include "mpu6050.h"
+#include "MPU6050.h"
 #include <string.h>
 #include <stdio.h>
 /* USER CODE END Includes */
