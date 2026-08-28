@@ -163,6 +163,7 @@ int main(void)
     HAL_Delay(500);
   /* USER CODE END 3 */
 }
+} 
 
 /**
   * @brief System Clock Configuration
